@@ -5,21 +5,17 @@ from pathlib import Path
 from .models import Email
 
 
-class ParseError(Exception): # Позже добавляем в failed
+class ParseError(Exception):
     """Не смогли прочитать файл как письмо."""
 
 
-# расширения, которые точно не текст - значит не письмо - значит залетный файл или ошибка
+# расширения, которые точно не текст
 BINARY_EXTENSIONS = {".bin", ".jpeg", ".jpg", ".png", ".gif", ".pdf"}
 
 
 def should_skip_file(path: Path) -> bool:
-    name = path.name
-    if name == ".DS_Store":
-        return True
-    if name.startswith("."):
-        return True
-    return False
+    # скрытые файлы (начинаются с точки) — не письма
+    return path.name.startswith(".")
 
 
 def read_text(path: Path) -> str:
@@ -27,14 +23,13 @@ def read_text(path: Path) -> str:
     if not raw.strip():
         raise ParseError("файл пустой")
 
-    for encoding in ("utf-8", "cp1251", "latin-1"): # учитываем все известные мне кодировки)
+    for encoding in ("utf-8", "cp1251", "latin-1"):
         try:
             return raw.decode(encoding)
         except UnicodeDecodeError:
             continue
 
-    raise ParseError("не удалось определить кодировку") # -except
-
+    raise ParseError("не удалось определить кодировку")
 
 
 def parse_text_content(text: str, path: Path, raw_format: str) -> Email:
@@ -43,7 +38,7 @@ def parse_text_content(text: str, path: Path, raw_format: str) -> Email:
     body_lines = []
     in_body = False
 
-    for line in text.splitlines():
+    for line in text.splitlines(): 
         if not in_body:
             if line.strip() == "":
                 in_body = True
@@ -59,15 +54,15 @@ def parse_text_content(text: str, path: Path, raw_format: str) -> Email:
                 subject = subject_match.group(1).strip()
                 continue
 
-            # To, Date и т.п. просто пропускаем
+            # To, Date и т.п. просто пропускаем (возможно стоит где-нибудь обработать)
             if re.match(r"^(?:To|Кому|Date|Дата)\s*:", line, re.IGNORECASE):
                 continue
         else:
-            body_lines.append(line)
+            body_lines.append(line) # ДОбавляем в тело
 
     body = "\n".join(body_lines).strip()
     return Email(
-        source_path=path,
+        source_path=path, # откуда - путь
         sender=sender,
         subject=subject,
         body=body,
@@ -78,13 +73,13 @@ def parse_text_content(text: str, path: Path, raw_format: str) -> Email:
 def parse_json_content(text: str, path: Path) -> Email:
     try:
         data = json.loads(text)
-    except json.JSONDecodeError as err:
-        raise ParseError(f"битый json: {err}") from err
+    except json.JSONDecodeError as err: # если битый/нечитаемый
+        raise ParseError(f"битый json: {err}") from err # в откладку
 
-    if not isinstance(data, dict):
+    if not isinstance(data, dict): # проверка на словарь
         raise ParseError("json должен быть объектом")
 
-    body = data.get("body", "")
+    body = data.get("body", "") # проверка на пустоту
     if body is None:
         body = ""
     if not isinstance(body, str):
@@ -99,14 +94,14 @@ def parse_json_content(text: str, path: Path) -> Email:
     )
 
 
-class EmailParser:
+class EmailParser: # наш "верховный" класс для парсинга
     def parse(self, path: Path) -> Email:
-        path = Path(path)
+        path = Path(path) # если строка, то преобразуем в Path
 
         if should_skip_file(path):
             raise ParseError("служебный файл, пропускаем")
 
-        suffix = path.suffix.lower()
+        suffix = path.suffix.lower() # если формат TEXT - text и т д, чтобы не было ошибок
 
         if suffix in BINARY_EXTENSIONS:
             raise ParseError(f"бинарный формат {suffix}")
@@ -118,7 +113,7 @@ class EmailParser:
 
         # .txt и файлы без расширения читаем одинаково
         if suffix in ("", ".txt"):
-            fmt = "no_ext" if suffix == "" else "txt"
-            return parse_text_content(text, path, fmt)
+            format = "no_ext" if suffix == "" else "txt"
+            return parse_text_content(text, path, format)
 
         raise ParseError(f"неизвестный формат {suffix}")
