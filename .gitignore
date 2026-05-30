@@ -217,3 +217,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Runtime: обработанные письма, логи (не коммитить)
+mailbox/*
+!mailbox/.gitkeep
