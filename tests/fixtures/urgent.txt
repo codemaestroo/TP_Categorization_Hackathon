@@ -1,0 +1,5 @@
+From: test@company.ru
+Subject: URGENT: server down
+To: it-support@company.ru
+
+Server is not responding since morning.

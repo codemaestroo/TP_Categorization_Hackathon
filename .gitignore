@@ -221,3 +221,6 @@ __marimo__/
 # Runtime: обработанные письма, логи (не коммитить)
 mailbox/*
 !mailbox/.gitkeep
+
+# остатки git filter-branch (если появятся)
+.git-rewrite/

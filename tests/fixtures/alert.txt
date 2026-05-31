@@ -1,0 +1,5 @@
+From: alerts@grafana.internal
+Subject: [INFO] healthcheck failed
+To: it-support@company.ru
+
+ALERT: Database cluster failed healthcheck 3 times.
