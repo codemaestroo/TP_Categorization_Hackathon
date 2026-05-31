@@ -17,3 +17,4 @@ class RuleBasedClassifier:
             category=Category.UNCLASSIFIED,
             reason="ни одно правило не подошло",
         )
+    
